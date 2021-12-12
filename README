@@ -1,0 +1,19 @@
+# GNS3-VM
+
+## Vagrant
+
+First I started working on Vagrant and chose base image `generic/ubuntu2004` since it supports more providers than official `ubuntu/focal64`.
+
+I created a provisioning script that installs everything needed to run GNS3:
+
+- Add repos for GNS3 and Docker
+- Install GNS3
+- Install Docker
+- Install Firefox
+- Add user to groups
+- Prepare gns3server to work as a daemon
+- Configure and build Apache Guacamole
+
+I got systemd init script for GNS3 server from here: https://github.com/GNS3/gns3-server/blob/master/init/gns3.service.systemd
+
+For connection to the VM I decided to use Apache Guacamole for its simplicity and ease of use.
