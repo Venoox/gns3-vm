@@ -2,18 +2,28 @@
 
 ## Vagrant
 
-First I started working on Vagrant and chose base image `generic/ubuntu2004` since it supports more providers than official `ubuntu/focal64`.
+When deciding which OS to use I took into consideration what I'm comfortable with, stability and immutability, long-term support and guides from GNS3 documentation. Ultimately my decision was Ubuntu 20.04 which has Long-Term Support (LTS) so packages won't change much and will get security updates...there's also a guide in GNS3 documentation that shows how to install on Ubuntu.
+My second option was Fedora which I use on a daily basis and has great support for open-source packages out-of-the box which includes GNS3 whereas Ubuntu needs a PPA to support it, but Fedora is not stable enough since it releases new version every 6 months.
+
+First I started working on Vagrant because I'm more comfortable with it. As a base image I chose `generic/ubuntu2004` since it supports more providers than official `ubuntu/focal64`, but the downside is the image is 3x bigger than official one.
+
+For connection to the VM, I decided to use Apache Guacamole for its simplicity and ease of use and because it uses a HTML5 viewer so users don't need to install any special software.
+
+I had to decide between VNC and RDP for underlying protocol of Guacamole. Even though RDP is a proprietary protocol I ended up using it because according my research should be aware of what it transmits for example instead of just capturing an image of the whole screen like VNC, it transmits information about objects (button, color, position...). It also supports bidirectional clipboard, audio, microphone...
 
 I created a provisioning script that installs everything needed to run GNS3:
 
 - Add repos for GNS3 and Docker
-- Install GNS3
-- Install Docker
-- Install Firefox
-- Add user to groups
-- Prepare gns3server to work as a daemon
+- Install GNS3, Docker and Firefox
+- Add user to necessary groups
+- Prepare gns3-server to work as a daemon and run gns3-gui on startup
 - Configure and build Apache Guacamole
+- Install Tomcat and Java for Guacamole client
+- Install and configure nginx reverse proxy with SSL
+- Install XRDP server
 
-I got systemd init script for GNS3 server from here: https://github.com/GNS3/gns3-server/blob/master/init/gns3.service.systemd
+The configuration files are included in the repo and are transferred to the VM.
 
-For connection to the VM I decided to use Apache Guacamole for its simplicity and ease of use.
+Systemd init script for GNS3 server was retrived from the offical (GNS3 repo)[https://github.com/GNS3/gns3-server/blob/master/init/gns3.service.systemd]
+
+When setting up nginx config I used this neat [tool](https://ssl-config.mozilla.org/#server=nginx&version=1.17.0&config=intermediate&openssl=1.1.1&hsts=false&ocsp=false&guideline=5.6) to generate sane defaults.

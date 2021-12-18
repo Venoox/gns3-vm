@@ -1,0 +1,10 @@
+<user-mapping>
+    <authorize
+        username="fri-rk"
+        password="150fc648919014c92ba5c24f9fc64737" 
+        encoding="md5">
+            <protocol>rdp</protocol>
+            <param name="hostname">localhost</param>
+            <param name="port">3389</param>
+    </authorize>
+</user-mapping>
