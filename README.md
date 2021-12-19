@@ -7,8 +7,11 @@ There are 2 options and for both you need to open ports on your cloud provider's
 ### HTTP (Guacamole) - preferred
 
 Endpoint: `IP of your VM instance`
+
 Ports: `80` and `443`
+
 Username: `fri-rk`
+
 Password: `g^Z8g4Y#bU4L`
 
 I recommend using Firefox as Chrome doesn't like self-signed certs :)
@@ -16,8 +19,11 @@ I recommend using Firefox as Chrome doesn't like self-signed certs :)
 ### RDP (in case Guacamole doesn't work)
 
 Hostname: `IP of your VM instance`
+
 Port: `3389`
+
 Username: `ubuntu`
+
 Password: `g^Z8g4Y#bU4L`
 
 ## Vagrant
