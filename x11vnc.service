@@ -1,0 +1,14 @@
+[Unit]
+Description="x11vnc"
+Requires=display-manager.service
+After=display-manager.service
+
+[Service]
+ExecStartPre=/usr/bin/bash -c "/usr/bin/systemctl set-environment SDDMXAUTH=$(/usr/bin/find /var/run/sddm/ -type f)"
+ExecStart=/usr/bin/x11vnc -display :0 -auth ${SDDMXAUTH} -forever -shared -bg -o /var/log/x11vnc.log -xkb -noxrecord
+ExecStop=/usr/bin/killall x11vnc
+Restart=on-failure
+Restart-sec=2
+
+[Install]
+WantedBy=multi-user.target

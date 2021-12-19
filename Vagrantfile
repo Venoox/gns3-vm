@@ -13,5 +13,6 @@ Vagrant.configure("2") do |config|
   config.vm.provision "file", source: "server.xml", destination: "$HOME/server.xml"
   config.vm.provision "file", source: "user-mapping.xml", destination: "$HOME/user-mapping.xml"
   config.vm.provision "file", source: "GNS3.desktop", destination: "$HOME/GNS3.desktop"
+  config.vm.provision "file", source: "x11vnc.service", destination: "$HOME/x11vnc.service"
   config.vm.provision "shell", path: "provisioning.sh"
 end

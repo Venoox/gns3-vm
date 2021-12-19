@@ -82,7 +82,9 @@ sudo sh -c "echo 'guacd-port: 4822' >> /etc/guacamole/guacamole.properties"
 sudo sh -c "echo 'user-mapping: /etc/guacamole/user-mapping.xml' >> /etc/guacamole/guacamole.properties"
 
 # Setup RDP server
-sudo apt-get -y install xrdp
+sudo apt-get -y install xrdp x11vnc
 sudo adduser xrdp ssl-cert
+sudo mv /home/vagrant/x11vnc.service /lib/systemd/system/x11vnc.service
+sudo systemctl enable x11vnc
 
 sudo systemctl reboot

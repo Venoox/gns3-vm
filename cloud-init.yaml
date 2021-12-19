@@ -1,0 +1,201 @@
+#cloud-config
+
+users:
+  - default
+  - name: gns3
+    lock_passwd: true
+    homedir: /opt/gns3
+    shell: /sbin/nologin
+
+system_info:
+  default_user:
+    name: ubuntu
+
+package_update: true
+package_upgrade: true
+
+apt:
+  preserve_sources_list: true
+  sources:
+    gns3:
+      source: "ppa:gns3/ppa"
+    docker.list:
+      source: deb [arch=amd64] https://download.docker.com/linux/ubuntu $RELEASE stable
+      keyid: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+  debconf_selections:
+    ubridge: ubridge ubridge/install-setuid boolean true
+    wireshark: wireshark-common wireshark-common/install-setuid boolean true
+
+packages:
+  - build-essential
+  - ca-certificates
+  - curl
+  - gnupg
+  - gns3-gui
+  - gns3-server
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - lxqt-core
+  - sddm
+  - firefox
+  - libcairo2-dev
+  - libjpeg-turbo8-dev
+  - libpng-dev
+  - libtool-bin
+  - libossp-uuid-dev
+  - freerdp2-dev
+  - libpango1.0-dev
+  - libssh2-1-dev
+  - libvncserver-dev
+  - libssl-dev
+  - libwebp-dev
+  - openjdk-11-jdk
+  - tomcat9
+  - nginx
+  - xrdp
+  - x11vnc
+
+write_files:
+  - path: /lib/systemd/system/gns3.service
+    content: |
+      [Unit]
+      Description=GNS3 server
+      Wants=network-online.target
+      After=network.target network-online.target
+
+      [Service]
+      Type=forking
+      User=gns3
+      Group=gns3
+      PermissionsStartOnly=true
+      ExecStartPre=/bin/mkdir -p /var/log/gns3 /run/gns3
+      ExecStartPre=/bin/chown -R gns3:gns3 /var/log/gns3 /run/gns3
+      ExecStart=/usr/bin/gns3server --log /var/log/gns3/gns3.log \
+      --pid /run/gns3/gns3.pid --daemon
+      ExecReload=/bin/kill -s HUP $MAINPID
+      Restart=on-abort
+      PIDFile=/run/gns3/gns3.pid
+
+      [Install]
+      WantedBy=multi-user.target
+  - path: /lib/systemd/system/x11vnc.service
+    content: |
+      [Unit]
+      Description="x11vnc"
+      Requires=display-manager.service
+      After=display-manager.service
+
+      [Service]
+      ExecStartPre=/usr/bin/bash -c "/usr/bin/systemctl set-environment SDDMXAUTH=$(/usr/bin/find /var/run/sddm/ -type f)"
+      ExecStart=/usr/bin/x11vnc -display :0 -auth ${SDDMXAUTH} -forever -shared -bg -o /var/log/x11vnc.log -xkb -noxrecord
+      ExecStop=/usr/bin/killall x11vnc
+      Restart=on-failure
+      Restart-sec=2
+
+      [Install]
+      WantedBy=multi-user.target
+  - path: /etc/guacamole/guacamole.properties
+    content: |
+      guacd-hostname: localhost
+      guacd-port: 4822
+      user-mapping: /etc/guacamole/user-mapping.xml
+  - path: /etc/guacamole/user-mapping.xml
+    content: |
+      <user-mapping>
+        <authorize
+          username="fri-rk"
+          password="150fc648919014c92ba5c24f9fc64737" 
+          encoding="md5">
+            <connection name="GNS3 (RDP)">
+                <protocol>rdp</protocol>
+                <param name="hostname">localhost</param>
+                <param name="port">3389</param>
+            </connection>
+            <connection name="GNS3 (VNC)">
+                <protocol>vnc</protocol>
+                <param name="hostname">localhost</param>
+                <param name="port">5900</param>
+            </connection>
+        </authorize>
+      </user-mapping>
+  - path: /home/ubuntu/.config/autostart/GNS3.desktop
+    content: |
+      [Desktop Entry]
+      Exec=/bin/gns3
+      Path=/home/vagrant
+      Name=GNS3
+      Type=Application
+      Version=1.0
+  - path: /nginx_guacamole.conf
+    content: |
+      server {
+          listen 80;
+          listen [::]:80;
+
+          server_name localhost;
+
+          location / {
+              return 301 https://$host$request_uri;
+          }
+      }
+
+      server {
+          listen 443 ssl;
+          listen [::]:443 ssl;
+
+          server_name localhost;
+          ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+          ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+          ssl_dhparam /etc/nginx/dhparam.pem;
+
+          ssl_protocols TLSv1.2 TLSv1.3;
+          ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+          ssl_prefer_server_ciphers off;
+
+          location / {
+              proxy_pass http://127.0.0.1:8080/guacamole/;
+              proxy_buffering off;
+              proxy_http_version 1.1;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection $http_connection;
+              proxy_cookie_path /guacamole/ /;
+              access_log off;
+          }
+      }
+
+runcmd:
+  # Download, configure and build Guacamole server
+  - wget https://dlcdn.apache.org/guacamole/1.3.0/source/guacamole-server-1.3.0.tar.gz
+  - tar -xzf guacamole-server-1.3.0.tar.gz
+  - cd guacamole-server-1.3.0/
+  - ./configure --with-systemd-dir=/etc/systemd/system/
+  - make && make install
+  - ldconfig
+  - cd ..
+  # Guacamole client
+  - wget https://dlcdn.apache.org/guacamole/1.3.0/binary/guacamole-1.3.0.war
+  - cp guacamole-1.3.0.war /var/lib/tomcat9/webapps/guacamole.war
+  # Setup nginx reverse proxy for Guacamole client
+  - sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt -subj "/C=SI/ST=Ljubljana/L=Ljubljana/O=FRI/OU=RK/CN=localhost"
+  - curl https://ssl-config.mozilla.org/ffdhe2048.txt -o /etc/nginx/dhparam.pem
+  - sudo mv /nginx_guacamole.conf /etc/nginx/sites-available/
+  - sudo rm /etc/nginx/sites-enabled/default
+  - sudo ln -s /etc/nginx/sites-available/nginx_guacamole.conf /etc/nginx/sites-enabled/
+  # Tomcat config
+  - echo 'GUACAMOLE_HOME=/etc/guacamole' >> /etc/default/tomcat9
+  # Add xrdp to ssl-cert group
+  - adduser xrdp ssl-cert
+  # Add ubuntu user to all necessary groups
+  - usermod -aG ubridge,wireshark,docker ubuntu
+  # Enable all services
+  - systemctl daemon-reload && systemctl enable guacd tomcat9 nginx xrdp docker.socket gns3 x11vnc
+  # Setup iptables
+  - iptables -I INPUT 1 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+  - iptables -I INPUT 1 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+  - iptables -I INPUT 1 -m state --state NEW -p tcp --dport 8080 -j ACCEPT
+  - iptables-save
+
+power_state:
+  mode: reboot
