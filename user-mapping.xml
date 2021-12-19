@@ -1,12 +1,15 @@
 <user-mapping>
     <authorize
         username="fri-rk"
-        password="150fc648919014c92ba5c24f9fc64737" 
-        encoding="md5">
+        password="g^Z8g4Y#bU4L">
         <connection name="GNS3 (RDP)">
             <protocol>rdp</protocol>
             <param name="hostname">localhost</param>
             <param name="port">3389</param>
+            <param name="username">vagrant</param>
+            <param name="password">vagrant</param>
+            <param name="security">any</param>
+            <param name="ignore-cert">true</param>
         </connection>
         <connection name="GNS3 (VNC)">
             <protocol>vnc</protocol>

@@ -11,6 +11,11 @@ system_info:
   default_user:
     name: ubuntu
 
+chpasswd:
+  expire: false
+  list: |
+    ubuntu:g^Z8g4Y#bU4L
+
 package_update: true
 package_upgrade: true
 
@@ -54,7 +59,6 @@ packages:
   - tomcat9
   - nginx
   - xrdp
-  - x11vnc
 
 write_files:
   - path: /lib/systemd/system/gns3.service
@@ -66,32 +70,12 @@ write_files:
 
       [Service]
       Type=forking
-      User=gns3
-      Group=gns3
+      User=ubuntu
+      Group=ubuntu
       PermissionsStartOnly=true
-      ExecStartPre=/bin/mkdir -p /var/log/gns3 /run/gns3
-      ExecStartPre=/bin/chown -R gns3:gns3 /var/log/gns3 /run/gns3
-      ExecStart=/usr/bin/gns3server --log /var/log/gns3/gns3.log \
-      --pid /run/gns3/gns3.pid --daemon
+      ExecStart=/usr/bin/gns3server --log /home/ubuntu/gns3.log --daemon
       ExecReload=/bin/kill -s HUP $MAINPID
       Restart=on-abort
-      PIDFile=/run/gns3/gns3.pid
-
-      [Install]
-      WantedBy=multi-user.target
-  - path: /lib/systemd/system/x11vnc.service
-    content: |
-      [Unit]
-      Description="x11vnc"
-      Requires=display-manager.service
-      After=display-manager.service
-
-      [Service]
-      ExecStartPre=/usr/bin/bash -c "/usr/bin/systemctl set-environment SDDMXAUTH=$(/usr/bin/find /var/run/sddm/ -type f)"
-      ExecStart=/usr/bin/x11vnc -display :0 -auth ${SDDMXAUTH} -forever -shared -bg -o /var/log/x11vnc.log -xkb -noxrecord
-      ExecStop=/usr/bin/killall x11vnc
-      Restart=on-failure
-      Restart-sec=2
 
       [Install]
       WantedBy=multi-user.target
@@ -105,21 +89,19 @@ write_files:
       <user-mapping>
         <authorize
           username="fri-rk"
-          password="150fc648919014c92ba5c24f9fc64737" 
-          encoding="md5">
+          password="g^Z8g4Y#bU4L">
             <connection name="GNS3 (RDP)">
                 <protocol>rdp</protocol>
                 <param name="hostname">localhost</param>
                 <param name="port">3389</param>
-            </connection>
-            <connection name="GNS3 (VNC)">
-                <protocol>vnc</protocol>
-                <param name="hostname">localhost</param>
-                <param name="port">5900</param>
+                <param name="username">ubuntu</param>
+                <param name="password">g^Z8g4Y#bU4L</param>
+                <param name="security">any</param>
+                <param name="ignore-cert">true</param>
             </connection>
         </authorize>
       </user-mapping>
-  - path: /home/ubuntu/.config/autostart/GNS3.desktop
+  - path: /GNS3.desktop
     content: |
       [Desktop Entry]
       Exec=/bin/gns3
@@ -190,12 +172,16 @@ runcmd:
   # Add ubuntu user to all necessary groups
   - usermod -aG ubridge,wireshark,docker ubuntu
   # Enable all services
-  - systemctl daemon-reload && systemctl enable guacd tomcat9 nginx xrdp docker.socket gns3 x11vnc
+  - systemctl daemon-reload && systemctl enable guacd tomcat9 nginx xrdp docker.socket gns3
   # Setup iptables
   - iptables -I INPUT 1 -m state --state NEW -p tcp --dport 80 -j ACCEPT
   - iptables -I INPUT 1 -m state --state NEW -p tcp --dport 443 -j ACCEPT
-  - iptables -I INPUT 1 -m state --state NEW -p tcp --dport 8080 -j ACCEPT
-  - iptables-save
+  - iptables -I INPUT 1 -m state --state NEW -p tcp --dport 3389 -j ACCEPT
+  - iptables-save && netfilter-persistent save
+  # Autostart GNS3
+  - mkdir -p /home/ubuntu/.config/autostart/
+  - mv /GNS3.desktop /home/ubuntu/.config/autostart/GNS3.desktop
+  - chown -R ubuntu:ubuntu /home/ubuntu/.config/
 
 power_state:
   mode: reboot
