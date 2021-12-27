@@ -75,3 +75,8 @@ I tried setting 'security' to 'any' and 'ignore-cert' to 'yes' but that didn't h
 ## Security
 
 As this was primarily designed to be accessed with Guacamole I set a random generated password and although the password is published in this repo I think for the purpose of running GNS3 it's acceptable risk. I wanted to make it generate a random password for each instance but that turned out to be more complicated than I thought.
+
+## Screenshot
+
+![image](https://user-images.githubusercontent.com/21956707/147513033-f72bf84d-2e7e-41f4-b711-34bcde2bcd06.png)
+
