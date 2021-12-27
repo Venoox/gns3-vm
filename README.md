@@ -1,5 +1,11 @@
 # GNS3-VM
 
+# Install
+
+Choose your favorite cloud provider (AWS, GCP, Azure, Oracle) and find a tutorial on how to enter cloud-init config in the configuration process and copy everything from `cloud-init.yaml` in there.
+
+After you get connected and see GNS3 GUI, go to Edit -> Preferences -> General -> Console applications -> Edit -> `qterminal -e "telnet %h %p"` -> Apply
+
 ## Credentials
 
 There are 2 options and for both you need to open ports on your cloud provider's firewall!
